@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Админка · Bear</title>
+<style>
+:root{
+  --bg:#f2f0ec; --card:#fff; --ink:#16161a; --ink-2:#5c5a54; --ink-3:#8f8c82;
+  --line:#e0dcd3; --line-2:#c9c3b6; --terra:#c2572e; --forest:#2b4438; --red:#c93a3a;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --f-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--f-body);font-size:14px;line-height:1.5;color:var(--ink);
+  background:var(--bg);-webkit-font-smoothing:antialiased;min-height:100vh}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea,select{font:inherit}
+ul{list-style:none}
+
+/* ---------- LOGIN ---------- */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(circle at 30% 20%,#f7f5ef 0%,#e7e3d9 100%)}
+.login__card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:40px 36px;
+  width:100%;max-width:400px;box-shadow:0 20px 60px -30px rgba(22,22,26,.35)}
+.login__brand{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:22px;
+  letter-spacing:.28em;text-transform:uppercase;text-align:center;margin-bottom:8px}
+.login__sub{font-family:var(--f-mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink-3);text-align:center;margin-bottom:32px}
+.login__label{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:8px;display:block}
+.login__input{width:100%;height:46px;border:1px solid var(--line-2);border-radius:6px;padding:0 14px;
+  font-size:15px;outline:none;transition:border-color .2s}
+.login__input:focus{border-color:var(--terra)}
+.login__btn{width:100%;height:48px;background:var(--ink);color:#fff;border-radius:6px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  margin-top:20px;transition:background .2s}
+.login__btn:hover{background:var(--terra)}
+.login__hint{margin-top:22px;font-family:var(--f-mono);font-size:10px;color:var(--ink-3);
+  text-align:center;letter-spacing:.1em}
+.login__error{color:var(--red);font-size:12px;margin-top:12px;text-align:center;min-height:18px}
+
+/* ---------- ADMIN ---------- */
+.admin{display:none;min-height:100vh;flex-direction:column}
+.admin.is-active{display:flex}
+
+.top{background:var(--ink);color:#fff;height:60px;display:flex;align-items:center;
+  padding:0 20px;gap:20px;flex:none}
+.top__brand{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:16px;
+  letter-spacing:.28em;text-transform:uppercase;white-space:nowrap}
+.top__spacer{flex:1}
+.top__link{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.7);padding:8px 12px;border-radius:6px;transition:background .2s,color .2s}
+.top__link:hover{background:rgba(255,255,255,.1);color:#fff}
+.top__link--accent{color:var(--terra)}
+
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--line);padding:0 20px;overflow-x:auto;
+  flex:none;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:16px 20px;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.is-active{color:var(--terra);border-color:var(--terra)}
+
+.content{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
+.panel{display:none}
+.panel.is-active{display:block}
+
+.head-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.h-title{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:26px;line-height:1.1}
+.h-sub{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 20px;
+  border-radius:6px;font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;border:1px solid transparent;transition:background .2s,border-color .2s,color .2s;
+  white-space:nowrap;cursor:pointer}
+.btn--ink{background:var(--ink);color:#fff}
+.btn--ink:hover{background:var(--terra)}
+.btn--ghost{background:#fff;color:var(--ink);border-color:var(--line-2)}
+.btn--ghost:hover{border-color:var(--ink)}
+.btn--danger{background:#fff;color:var(--red);border-color:var(--line-2)}
+.btn--danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.btn--small{height:34px;padding:0 14px;font-size:10px}
+
+/* ---------- Список товаров ---------- */
+.products-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;
+  display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s}
+.pcard:hover{border-color:var(--line-2);box-shadow:0 8px 24px -16px rgba(22,22,26,.25)}
+.pcard__top{display:flex;gap:12px;margin-bottom:12px}
+.pcard__img{width:72px;height:72px;border-radius:8px;background:#f2f0ec;flex:none;overflow:hidden;
+  display:grid;place-items:center;color:var(--ink-3)}
+.pcard__img img{width:100%;height:100%;object-fit:cover}
+.pcard__img svg{width:52%;height:auto}
+.pcard__meta{flex:1;min-width:0}
+.pcard__brand{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--terra);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard__name{font-size:13px;line-height:1.3;overflow:hidden;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pcard__price{margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pcard__price b{font-size:16px;font-weight:600}
+.pcard__price s{font-size:11px;color:var(--ink-3)}
+.pcard__tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.pcard__tag{font-family:var(--f-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  padding:2px 6px;border-radius:3px;background:#eee;color:var(--ink-2)}
+.pcard__actions{display:flex;gap:8px;margin-top:auto}
+
+/* ---------- Форма товара ---------- */
+.form{background:#fff;border:1px solid var(--line);border-radius:10px;padding:24px;max-width:900px;margin:0 auto}
+.form__row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form__row--full{grid-template-columns:1fr}
+.form__field{display:flex;flex-direction:column}
+.form__label{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:6px}
+.form__input,.form__textarea,.form__select{width:100%;border:1px solid var(--line-2);border-radius:6px;
+  padding:10px 12px;font-size:14px;outline:none;transition:border-color .2s;background:#fff;color:var(--ink)}
+.form__input:focus,.form__textarea:focus,.form__select:focus{border-color:var(--terra)}
+.form__textarea{min-height:80px;resize:vertical;font-family:inherit}
+.form__hint{font-size:11px;color:var(--ink-3);margin-top:4px}
+
+.dropzone{border:2px dashed var(--line-2);border-radius:8px;padding:20px;text-align:center;
+  cursor:pointer;transition:border-color .2s,background .2s;background:#faf9f6}
+.dropzone:hover{border-color:var(--terra);background:#fff}
+.dropzone.is-over{border-color:var(--terra);background:#fff3ec}
+.dropzone__preview{max-width:180px;max-height:180px;border-radius:6px;margin:0 auto 12px;object-fit:cover;
+  display:block}
+.dropzone__text{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2)}
+.dropzone__sub{font-size:11px;color:var(--ink-3);margin-top:6px}
+
+.form__actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;
+  padding-top:20px;border-top:1px solid var(--line)}
+
+/* ---------- Категории ---------- */
+.cats-list{display:grid;gap:10px}
+.cat-row{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;
+  display:grid;grid-template-columns:60px 1fr 100px 120px auto;gap:12px;align-items:center}
+.cat-row input,.cat-row select{border:1px solid transparent;background:transparent;padding:6px 8px;
+  border-radius:4px;font-size:14px;width:100%;outline:none;transition:border-color .2s,background .2s}
+.cat-row input:hover,.cat-row select:hover{background:#f7f5ef}
+.cat-row input:focus,.cat-row select:focus{border-color:var(--terra);background:#fff}
+.cat-row__num{font-family:var(--f-mono);font-size:12px;color:var(--terra);text-align:center}
+
+/* ---------- Настройки ---------- */
+.settings-form{background:#fff;border:1px solid var(--line);border-radius:10px;padding:24px;max-width:800px}
+
+/* ---------- Данные ---------- */
+.data-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:24px;
+  max-width:800px;margin-bottom:16px}
+.data-card h3{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:20px;margin-bottom:8px}
+.data-card p{font-size:13px;color:var(--ink-2);margin-bottom:16px;line-height:1.6}
+.data-card__actions{display:flex;gap:10px;flex-wrap:wrap}
+.storage-info{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);
+  background:#f7f5ef;padding:12px 16px;border-radius:6px;margin-top:12px}
+
+/* ---------- Тосты ---------- */
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,120%);
+  background:var(--ink);color:#fff;padding:14px 24px;border-radius:8px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  transition:transform .35s cubic-bezier(.22,.61,.36,1);z-index:9999;box-shadow:0 12px 30px -10px rgba(0,0,0,.5)}
+.toast.is-visible{transform:translate(-50%,0)}
+.toast--error{background:var(--red)}
+.toast--success{background:var(--forest)}
+
+/* ---------- Модалка подтверждения ---------- */
+.modal{position:fixed;inset:0;background:rgba(22,22,26,.5);display:none;place-items:center;z-index:9998;padding:20px}
+.modal.is-open{display:grid}
+.modal__box{background:#fff;border-radius:10px;padding:28px;max-width:420px;width:100%;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+.modal__title{font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:22px;margin-bottom:12px}
+.modal__text{font-size:14px;color:var(--ink-2);margin-bottom:22px;line-height:1.6}
+.modal__actions{display:flex;gap:10px;justify-content:flex-end}
+
+/* ---------- Адаптив ---------- */
+@media (max-width:760px){
+  .content{padding:16px}
+  .form__row{grid-template-columns:1fr}
+  .cat-row{grid-template-columns:1fr 1fr;gap:8px}
+  .cat-row__num{text-align:left}
+  .top{height:auto;padding:12px 16px;flex-wrap:wrap;gap:8px}
+  .top__brand{font-size:14px}
+  .products-list{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="loginScreen">
+  <div class="login__card">
+    <div class="login__brand">Bear</div>
+    <div class="login__sub">Админ-панель</div>
+    <label class="login__label" for="passInput">Пароль</label>
+    <input type="password" class="login__input" id="passInput" placeholder="••••••••" autocomplete="current-password">
+    <button class="login__btn" id="loginBtn">Войти</button>
+    <div class="login__error" id="loginError"></div>
+    <div class="login__hint">По умолчанию: <b>bear2026</b></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin" id="adminScreen">
+
+  <div class="top">
+    <div class="top__brand">Bear · Админка</div>
+    <div class="top__spacer"></div>
+    <a href="index.html" class="top__link top__link--accent" target="_blank">Открыть сайт ↗</a>
+    <button class="top__link" id="logoutBtn">Выйти</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab is-active" data-tab="products">Товары</button>
+    <button class="tab" data-tab="categories">Категории</button>
+    <button class="tab" data-tab="settings">Настройки</button>
+    <button class="tab" data-tab="data">Данные</button>
+    <button class="tab" data-tab="security">Пароль</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== ТОВАРЫ ===== -->
+    <div class="panel is-active" id="panel-products">
+      <div id="productsListWrap">
+        <div class="head-row">
+          <div>
+            <div class="h-title">Товары</div>
+            <div class="h-sub" id="productsCount">—</div>
+          </div>
+          <button class="btn btn--ink" id="addProductBtn">+ Добавить товар</button>
+        </div>
+        <div class="products-list" id="productsList"></div>
+      </div>
+
+      <div id="productFormWrap" style="display:none">
+        <div class="head-row">
+          <div>
+            <div class="h-title" id="formTitle">Новый товар</div>
+            <div class="h-sub">Все поля можно менять</div>
+          </div>
+          <button class="btn btn--ghost" id="cancelFormBtn">← Назад</button>
+        </div>
+
+        <div class="form">
+          <input type="hidden" id="f_id">
+
+          <div class="form__row form__row--full">
+            <div class="form__field">
+              <label class="form__label">Изображение товара</label>
+              <div class="dropzone" id="dropzone">
+                <img class="dropzone__preview" id="imgPreview" style="display:none" alt="">
+                <div class="dropzone__text" id="dropzoneText">Нажмите или перетащите файл</div>
+                <div class="dropzone__sub">JPG, PNG, WebP. Автоматически сжимается до 900 px.</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+              </div>
+              <div class="form__hint">
+                <button type="button" class="btn btn--ghost btn--small" id="removeImgBtn" style="margin-top:10px;display:none">Удалить изображение</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Артикул</label>
+              <input type="text" class="form__input" id="f_article" placeholder="№ 001">
+            </div>
+            <div class="form__field">
+              <label class="form__label">Бренд (страна)</label>
+              <input type="text" class="form__input" id="f_brand" placeholder="Grohe · DE">
+            </div>
+          </div>
+
+          <div class="form__row form__row--full">
+            <div class="form__field">
+              <label class="form__label">Название</label>
+              <input type="text" class="form__input" id="f_name" placeholder="Смеситель для кухни…">
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Спецификация 1</label>
+              <input type="text" class="form__input" id="f_spec1" placeholder="Вынос 220 мм">
+            </div>
+            <div class="form__field">
+              <label class="form__label">Спецификация 2</label>
+              <input type="text" class="form__input" id="f_spec2" placeholder="Латунь">
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Цена, ₽</label>
+              <input type="number" class="form__input" id="f_price" placeholder="14990">
+            </div>
+            <div class="form__field">
+              <label class="form__label">Старая цена, ₽ (0 — нет)</label>
+              <input type="number" class="form__input" id="f_oldPrice" placeholder="18500">
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Клубная цена, ₽</label>
+              <input type="number" class="form__input" id="f_clubPrice" placeholder="13790">
+            </div>
+            <div class="form__field">
+              <label class="form__label">Бейдж на фото</label>
+              <input type="text" class="form__input" id="f_badge" placeholder="Хит / Новинка / −20%">
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Рейтинг</label>
+              <input type="text" class="form__input" id="f_rating" placeholder="4.9">
+            </div>
+            <div class="form__field">
+              <label class="form__label">Отзывов</label>
+              <input type="text" class="form__input" id="f_reviews" placeholder="1248">
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="form__field">
+              <label class="form__label">Теги (через пробел)</label>
+              <input type="text" class="form__input" id="f_tags" placeholder="hit new sale premium">
+              <div class="form__hint">Доступные: hit, new, sale, premium</div>
+            </div>
+            <div class="form__field">
+              <label class="form__label">Иконка (если нет фото)</label>
+              <select class="form__select" id="f_icon">
+                <option value="faucet">Смеситель</option>
+                <option value="bath">Ванна</option>
+                <option value="toilet">Унитаз</option>
+                <option value="shower">Душ</option>
+                <option value="sink">Умывальник</option>
+                <option value="furniture">Мебель</option>
+                <option value="towel">Полотенцесушитель</option>
+                <option value="accessory">Аксессуар</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form__actions">
+            <button class="btn btn--ghost" id="cancelForm2Btn">Отмена</button>
+            <button class="btn btn--ink" id="saveProductBtn">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== КАТЕГОРИИ ===== -->
+    <div class="panel" id="panel-categories">
+      <div class="head-row">
+        <div>
+          <div class="h-title">Категории</div>
+          <div class="h-sub">Меняйте названия и порядок</div>
+        </div>
+        <button class="btn btn--ink" id="addCatBtn">+ Категория</button>
+      </div>
+      <div class="cats-list" id="catsList"></div>
+    </div>
+
+    <!-- ===== НАСТРОЙКИ ===== -->
+    <div class="panel" id="panel-settings">
+      <div class="head-row">
+        <div>
+          <div class="h-title">Настройки сайта</div>
+          <div class="h-sub">Название, контакты, тексты</div>
+        </div>
+      </div>
+
+      <div class="settings-form">
+        <div class="form__row">
+          <div class="form__field">
+            <label class="form__label">Название бренда</label>
+            <input type="text" class="form__input" id="s_brandName">
+          </div>
+          <div class="form__field">
+            <label class="form__label">Подзаголовок (тег)</label>
+            <input type="text" class="form__input" id="s_tagline">
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Текст в верхней полосе по центру</label>
+            <input type="text" class="form__input" id="s_topbarMid">
+          </div>
+        </div>
+
+        <div class="form__row">
+          <div class="form__field">
+            <label class="form__label">Телефон</label>
+            <input type="text" class="form__input" id="s_phone">
+          </div>
+          <div class="form__field">
+            <label class="form__label">E-mail</label>
+            <input type="text" class="form__input" id="s_email">
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Адрес</label>
+            <input type="text" class="form__input" id="s_address">
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Надзаголовок в герое</label>
+            <input type="text" class="form__input" id="s_heroKicker">
+          </div>
+        </div>
+
+        <div class="form__row">
+          <div class="form__field">
+            <label class="form__label">Заголовок героя — строка 1</label>
+            <input type="text" class="form__input" id="s_heroTitle1">
+          </div>
+          <div class="form__field">
+            <label class="form__label">Заголовок героя — строка 2</label>
+            <input type="text" class="form__input" id="s_heroTitle2">
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Заголовок героя — строка 3 (курсив)</label>
+            <input type="text" class="form__input" id="s_heroTitle3">
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Текст в герое</label>
+            <textarea class="form__textarea" id="s_heroText"></textarea>
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Текст подписки</label>
+            <textarea class="form__textarea" id="s_subscribeText"></textarea>
+          </div>
+        </div>
+
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">О компании в футере</label>
+            <textarea class="form__textarea" id="s_footerAbout"></textarea>
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button class="btn btn--ink" id="saveSettingsBtn">Сохранить настройки</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ДАННЫЕ ===== -->
+    <div class="panel" id="panel-data">
+      <div class="head-row">
+        <div>
+          <div class="h-title">Данные</div>
+          <div class="h-sub">Экспорт, импорт, сброс</div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <h3>Резервная копия</h3>
+        <p>Скачайте файл со всеми товарами, категориями, настройками и изображениями. Сохраните его — при переезде на другой браузер или компьютер просто загрузите обратно.</p>
+        <div class="data-card__actions">
+          <button class="btn btn--ink" id="exportBtn">Скачать JSON</button>
+          <button class="btn btn--ghost" id="importBtn">Загрузить JSON</button>
+          <input type="file" id="importInput" accept=".json,application/json" style="display:none">
+        </div>
+      </div>
+
+      <div class="data-card">
+        <h3>Хранилище</h3>
+        <p>Данные хранятся в браузере (localStorage). Лимит — около 5 МБ. Если места не хватает, удалите несколько изображений или товаров.</p>
+        <div class="storage-info" id="storageInfo">—</div>
+      </div>
+
+      <div class="data-card">
+        <h3 style="color:var(--red)">Опасная зона</h3>
+        <p>Сброс вернёт сайт к изначальному состоянию: 8 демо-товаров и стандартные настройки. Ваши изменения будут потеряны. Сначала скачайте резервную копию.</p>
+        <div class="data-card__actions">
+          <button class="btn btn--danger" id="resetBtn">Сбросить к демо-данным</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ПАРОЛЬ ===== -->
+    <div class="panel" id="panel-security">
+      <div class="head-row">
+        <div>
+          <div class="h-title">Смена пароля</div>
+          <div class="h-sub">Пароль хранится в этом браузере</div>
+        </div>
+      </div>
+
+      <div class="settings-form">
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Новый пароль</label>
+            <input type="password" class="form__input" id="p_new" placeholder="Минимум 6 символов">
+          </div>
+        </div>
+        <div class="form__row form__row--full">
+          <div class="form__field">
+            <label class="form__label">Повторите пароль</label>
+            <input type="password" class="form__input" id="p_new2" placeholder="Ещё раз">
+          </div>
+        </div>
+        <div class="form__actions">
+          <button class="btn btn--ink" id="savePassBtn">Сменить пароль</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Модальное подтверждение -->
+<div class="modal" id="modalConfirm">
+  <div class="modal__box">
+    <div class="modal__title" id="modalTitle">Подтверждение</div>
+    <div class="modal__text" id="modalText">Вы уверены?</div>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="modalCancel">Отмена</button>
+      <button class="btn btn--danger" id="modalOk">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = window.BearData;
+  var data;
+
+  /* ============================================================
+     АВТОРИЗАЦИЯ
+     ============================================================ */
+  var loginScreen = document.getElementById('loginScreen');
+  var adminScreen = document.getElementById('adminScreen');
+  var passInput   = document.getElementById('passInput');
+  var loginBtn    = document.getElementById('loginBtn');
+  var loginError  = document.getElementById('loginError');
+
+  function showAdmin() {
+    loginScreen.style.display = 'none';
+    adminScreen.classList.add('is-active');
+    data = D.load();
+    renderAll();
+  }
+
+  if (D.isAuthed()) {
+    showAdmin();
+  } else {
+    setTimeout(function () { passInput.focus(); }, 100);
+  }
+
+  loginBtn.addEventListener('click', tryLogin);
+  passInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') tryLogin();
+  });
+
+  function tryLogin() {
+    var p = passInput.value;
+    if (D.login(p)) {
+      loginError.textContent = '';
+      showAdmin();
+    } else {
+      loginError.textContent = 'Неверный пароль';
+      passInput.value = '';
+      passInput.focus();
+    }
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    D.logout();
+    location.reload();
+  });
+
+  /* ============================================================
+     ТАБЫ
+     ============================================================ */
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('is-active'); });
+      tab.classList.add('is-active');
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('is-active'); });
+      document.getElementById('panel-' + name).classList.add('is-active');
+      if (name === 'data') updateStorageInfo();
+    });
+  });
+
+  /* ============================================================
+     ХЕЛПЕРЫ
+     ============================================================ */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function fmtPrice(n) {
+    if (!n) return '';
+    return Number(n).toLocaleString('ru-RU') + ' ₽';
+  }
+  function fmtBytes(b) {
+    if (b < 1024) return b + ' Б';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' КБ';
+    return (b / 1024 / 1024).toFixed(2) + ' МБ';
+  }
+
+  var toastTimer;
+  function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (type ? ' toast--' + type : '');
+    t.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('is-visible'); }, 2400);
+  }
+
+  /* Модалка */
+  var modal = document.getElementById('modalConfirm');
+  var modalOk = document.getElementById('modalOk');
+  var modalCancel = document.getElementById('modalCancel');
+  var modalCallback = null;
+
+  function confirmDialog(title, text, okText, cb) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalText').textContent = text;
+    modalOk.textContent = okText || 'Удалить';
+    modalCallback = cb;
+    modal.classList.add('is-open');
+  }
+  modalOk.addEventListener('click', function () {
+    modal.classList.remove('is-open');
+    if (modalCallback) modalCallback();
+  });
+  modalCancel.addEventListener('click', function () {
+    modal.classList.remove('is-open');
+  });
+
+  /* ============================================================
+     РЕНДЕР ТОВАРОВ
+     ============================================================ */
+  var productsListEl = document.getElementById('productsList');
+  var productsListWrap = document.getElementById('productsListWrap');
+  var productFormWrap = document.getElementById('productFormWrap');
+  var productsCountEl = document.getElementById('productsCount');
+
+  function renderProducts() {
+    productsCountEl.textContent = data.products.length + ' товаров';
+    if (!data.products.length) {
+      productsListEl.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:var(--ink-3)">Товаров пока нет. Нажмите «Добавить товар».</div>';
+      return;
+    }
+    productsListEl.innerHTML = data.products.map(function (p) {
+      var img = p.image
+        ? '<img src="' + p.image + '" alt="">'
+        : D.iconSvg(p.icon || 'faucet');
+      var old = p.oldPrice && p.oldPrice > p.price ? '<s>' + fmtPrice(p.oldPrice) + '</s>' : '';
+      var tags = (p.tags || '').split(/\s+/).filter(Boolean).map(function (t) {
+        return '<span class="pcard__tag">' + esc(t) + '</span>';
+      }).join('');
+      return '<div class="pcard" data-id="' + p.id + '">' +
+        '<div class="pcard__top">' +
+          '<div class="pcard__img">' + img + '</div>' +
+          '<div class="pcard__meta">' +
+            '<div class="pcard__brand">' + esc(p.brand || '') + '</div>' +
+            '<div class="pcard__name">' + esc(p.name || '') + '</div>' +
+            '<div class="pcard__price"><b>' + fmtPrice(p.price) + '</b>' + old + '</div>' +
+            (tags ? '<div class="pcard__tags">' + tags + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="pcard__actions">' +
+          '<button class="btn btn--ghost btn--small" data-edit="' + p.id + '">Изменить</button>' +
+          '<button class="btn btn--danger btn--small" data-del="' + p.id + '">Удалить</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    productsListEl.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () { openProductForm(b.getAttribute('data-edit')); });
+    });
+    productsListEl.querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () { deleteProduct(b.getAttribute('data-del')); });
+    });
+  }
+
+  /* ============================================================
+     ФОРМА ТОВАРА
+     ============================================================ */
+  var currentImage = null;
+
+  function openProductForm(id) {
+    productsListWrap.style.display = 'none';
+    productFormWrap.style.display = 'block';
+
+    var p = id ? data.products.find(function (x) { return x.id === id; }) : null;
+    if (p) {
+      document.getElementById('formTitle').textContent = 'Редактирование';
+      document.getElementById('f_id').value       = p.id;
+      document.getElementById('f_article').value  = p.article || '';
+      document.getElementById('f_brand').value    = p.brand || '';
+      document.getElementById('f_name').value     = p.name || '';
+      document.getElementById('f_spec1').value    = p.spec1 || '';
+      document.getElementById('f_spec2').value    = p.spec2 || '';
+      document.getElementById('f_price').value    = p.price || '';
+      document.getElementById('f_oldPrice').value = p.oldPrice || '';
+      document.getElementById('f_clubPrice').value = p.clubPrice || '';
+      document.getElementById('f_badge').value    = p.badge || '';
+      document.getElementById('f_rating').value   = p.rating || '';
+      document.getElementById('f_reviews').value  = p.reviews || '';
+      document.getElementById('f_tags').value     = p.tags || '';
+      document.getElementById('f_icon').value     = p.icon || 'faucet';
+      currentImage = p.image || null;
+    } else {
+      document.getElementById('formTitle').textContent = 'Новый товар';
+      ['f_id','f_article','f_brand','f_name','f_spec1','f_spec2','f_price',
+       'f_oldPrice','f_clubPrice','f_badge','f_rating','f_reviews','f_tags'].forEach(function (f) {
+        document.getElementById(f).value = '';
+      });
+      document.getElementById('f_icon').value = 'faucet';
+      // Автоартикул: № след.
+      var nextNum = data.products.length + 1;
+      document.getElementById('f_article').value = '№ ' + String(nextNum).padStart(3, '0');
+      currentImage = null;
+    }
+    updateImagePreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeProductForm() {
+    productFormWrap.style.display = 'none';
+    productsListWrap.style.display = 'block';
+    currentImage = null;
+  }
+
+  document.getElementById('addProductBtn').addEventListener('click', function () { openProductForm(null); });
+  document.getElementById('cancelFormBtn').addEventListener('click', closeProductForm);
+  document.getElementById('cancelForm2Btn').addEventListener('click', closeProductForm);
+
+  /* ---------- Изображение ---------- */
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('fileInput');
+  var imgPreview = document.getElementById('imgPreview');
+  var dropzoneText = document.getElementById('dropzoneText');
+  var removeImgBtn = document.getElementById('removeImgBtn');
+
+  function updateImagePreview() {
+    if (currentImage) {
+      imgPreview.src = currentImage;
+      imgPreview.style.display = 'block';
+      dropzoneText.textContent = 'Нажмите, чтобы заменить';
+      removeImgBtn.style.display = 'inline-flex';
+    } else {
+      imgPreview.style.display = 'none';
+      imgPreview.src = '';
+      dropzoneText.textContent = 'Нажмите или перетащите файл';
+      removeImgBtn.style.display = 'none';
+    }
+  }
+
+  dropzone.addEventListener('click', function () { fileInput.click(); });
+
+  dropzone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    dropzone.classList.add('is-over');
+  });
+  dropzone.addEventListener('dragleave', function () {
+    dropzone.classList.remove('is-over');
+  });
+  dropzone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    dropzone.classList.remove('is-over');
+    var f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    if (f) handleFile(f);
+    fileInput.value = '';
+  });
+
+  function handleFile(file) {
+    if (!file.type.match(/^image\//)) {
+      toast('Только изображения', 'error');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast('Файл больше 8 МБ', 'error');
+      return;
+    }
+    dropzoneText.textContent = 'Обра
